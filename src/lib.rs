@@ -17,18 +17,24 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>>{
     Ok(())
 }
 
-pub struct Config <'a>{
-    pub query: & 'a str,
-    pub filename : & 'a str,
+pub struct Config {
+    pub query: String,
+    pub filename : String,
     pub case_sensitive: bool,
 }
-impl<'a> Config <'a> {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() > 3 {
-            return Err("not enough arguments")
-        }
-        let query = &args[1];
-        let filename = &args[2];
+impl<'a> Config  {
+    pub fn new(mut args: env::Args) -> Result<Config, & 'static str> {
+        args.next();
+
+        let query =match args.next(){
+            Some(arg) =>arg,
+            None=> return Err("Didn't get a query string"),
+        };
+
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None=> return Err("The file doesn't exists in the given location"),
+        };
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();     
     
         return Ok(Config { query, filename, case_sensitive})
@@ -36,24 +42,33 @@ impl<'a> Config <'a> {
 }
 
 pub fn search <'a>(query: &str, content: & 'a str) -> Vec<& 'a str> {
-    let mut result:Vec<&str> = Vec::new(); 
-    for line in content.lines(){
-        if line.contains(query) {
-            result.push(line);
-        }   
-    }
-    return  result;
+    // let mut result:Vec<&str> = Vec::new(); 
+    // for line in content.lines(){
+    //     if line.contains(query) {
+    //         result.push(line);
+    //     }   
+    // }
+    // return  result;
+    content.lines().into_iter().filter(|line| {
+        line.contains(query)    
+    }).collect()
+
 }
 
 pub fn search_case_insensitve <'a>(query: &str, content: & 'a str)-> Vec<& 'a str> {
-    let mut result:Vec<&str> = Vec::new();
-    let new_query = query.to_lowercase();
-    for line in content.lines(){
-        if line.to_lowercase().contains(&new_query){
-            result.push(line);
-        }
-    }
-    return result;
+    // let mut result:Vec<&str> = Vec::new();
+    // let new_query = query.to_lowercase();
+    // for line in content.lines(){
+    //     if line.to_lowercase().contains(&new_query){
+    //         result.push(line);
+    //     }
+    // }
+    // return result;
+
+    let new_query= query.to_lowercase();
+    content.lines().into_iter().filter(|line|{
+        line.contains(&new_query)
+    }).collect()
 }
 #[cfg(test)]
 mod tests {
